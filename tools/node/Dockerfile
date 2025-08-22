@@ -1,3 +1,5 @@
+# syntax=docker.io/docker/dockerfile-upstream:1.14.0-labs
+
 FROM builder AS build
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -26,11 +28,8 @@ ENV NODE_ARCH=""
 RUN . /tmp/node_arch.env && export NODE_ARCH
 
 # Download and extract official prebuilt Node.js binary
-RUN . /tmp/node_arch.env; \
-  curl -fsSL -o node.tar.xz https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-${NODE_ARCH}.tar.xz \
-  && tar -xJf node.tar.xz \
-  && rm node.tar.xz \
-  && mv node-v${NODE_VERSION}-${NODE_ARCH}/ $TOOLS_DIR/
+COPY --chmod=0755 install-node.sh /usr/local/bin
+RUN install-node.sh
 
 # Vendor non-glibc shared libraries
 RUN vendor-dependencies.sh
