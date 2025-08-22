@@ -4,8 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update &&\
     apt-get install -y --no-install-recommends \
-    git libncurses-dev libpcre2-dev libssl-dev &&\
-    rm -rf /var/lib/apt/lists/*
+    git libncurses-dev libpcre2-dev libssl-dev
 
 ARG ZSH_VERSION=5.9
 

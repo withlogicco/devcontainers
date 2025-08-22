@@ -1,11 +1,12 @@
 FROM builder AS build
 
-RUN apt-get update &&\
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+	  --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update &&\
     apt-get install -y --no-install-recommends \
     libz-dev zlib1g-dev libssl-dev \
     libcurl4-openssl-dev libexpat1-dev libpcre2-dev \
-    gettext rsync perl xz-utils &&\
-    rm -rf /var/lib/apt/lists/*
+    gettext rsync perl xz-utils
 
 WORKDIR /tmp
 

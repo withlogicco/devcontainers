@@ -2,9 +2,10 @@ FROM debian:bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update &&\
-	apt-get install -y --no-install-recommends ca-certificates &&\
-	rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+	--mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+	apt-get update &&\
+	apt-get install -y --no-install-recommends ca-certificates
 
 ARG TOOLS_DIR=/opt/tools
 ENV TOOLS_DIR=${TOOLS_DIR}
