@@ -15,8 +15,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/bake-action@v6.9.0
         with:
-          source: ./tools
-          files: ./tools/docker-bake.hcl
+          files: ./docker-bake.tools.hcl
           push: true
           set: |
             *.cache-from=type=gha

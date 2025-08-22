@@ -3,7 +3,7 @@ group "default" {
 }
 
 target "postgres" {
-  context = "./postgres"
+  context = "./tools/postgres"
   dockerfile = "Dockerfile"
   tags = ["ghcr.io/withlogicco/devcontainers/tools/postgres:latest"]
   contexts = {
@@ -13,7 +13,7 @@ target "postgres" {
 }
 
 target "git" {
-  context = "./git"
+  context = "./tools/git"
   dockerfile = "Dockerfile"
   tags = ["ghcr.io/withlogicco/devcontainers/tools/git:latest"]
   contexts = {
@@ -23,7 +23,7 @@ target "git" {
 }
 
 target "node" {
-  context = "./node"
+  context = "./tools/node"
   dockerfile = "Dockerfile"
   tags = ["ghcr.io/withlogicco/devcontainers/tools/node:latest"]
   contexts = {
@@ -33,7 +33,7 @@ target "node" {
 }
 
 target "zsh" {
-  context = "./zsh"
+  context = "./tools/zsh"
   dockerfile = "Dockerfile"
   tags = ["ghcr.io/withlogicco/devcontainers/tools/zsh:latest"]
   contexts = {
@@ -43,13 +43,13 @@ target "zsh" {
 }
 
 target "base" {
-  context = "./base"
+  context = "./tools/base"
   dockerfile = "Dockerfile"
   tags = ["ghcr.io/withlogicco/devcontainers/tools/base:latest"]
 }
 
 target "builder" {
-  context = "./builder"
+  context = "./tools/builder"
   dockerfile = "Dockerfile"
   tags = ["ghcr.io/withlogicco/devcontainers/tools/builder:latest"]
   contexts = {
