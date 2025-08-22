@@ -1,3 +1,5 @@
+#!/bin/sh
+
 set -eux; \
   mkdir -p $TOOLS_DIR/lib; \
   bins="$(find $TOOLS_DIR/bin $TOOLS_DIR/libexec -type f -perm -u=x 2>/dev/null)"; \
