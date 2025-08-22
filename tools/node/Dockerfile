@@ -30,7 +30,7 @@ RUN . /tmp/node_arch.env; \
   curl -fsSL -o node.tar.xz https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-${NODE_ARCH}.tar.xz \
   && tar -xJf node.tar.xz \
   && rm node.tar.xz \
-  && mv node-v${NODE_VERSION}-${NODE_ARCH} $TOOLS_DIR
+  && mv node-v${NODE_VERSION}-${NODE_ARCH}/ $TOOLS_DIR/
 
 # Vendor non-glibc shared libraries
 RUN vendor-dependencies.sh
