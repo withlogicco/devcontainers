@@ -1,3 +1,5 @@
+#! /bin/bash
+
 set -ex
 
 export $(cat /tmp/node_arch.env)
