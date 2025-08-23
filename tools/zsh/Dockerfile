@@ -1,10 +1,14 @@
 FROM builder AS build
 
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update &&\
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+	  --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+   apt-get update &&\
     apt-get install -y --no-install-recommends \
     git libncurses-dev libpcre2-dev libssl-dev
+
+ENV TOOL_NAME=zsh
+ENV TOOL_DIR=${TOOLS_ROOT}/${TOOL_NAME}
+RUN mkdir -p ${TOOL_DIR}
 
 ARG ZSH_VERSION=5.9
 
@@ -17,22 +21,19 @@ RUN curl -fsSL -o zsh.tar.xz https://sourceforge.net/projects/zsh/files/zsh/${ZS
 
 WORKDIR /tmp/zsh-${ZSH_VERSION}
 
-# Configure to install into $TOOLS_ROOT
+# Configure to install into $TOOL_DIR
 RUN ./Util/preconfig \
-  && ./configure --prefix=$TOOLS_ROOT --enable-multibyte --with-tcsetpgrp \
+  && ./configure --prefix=${TOOL_DIR} --enable-multibyte --with-tcsetpgrp \
   && make -j"$(nproc)" \
   && make install
 
-# Install Oh My Zsh to $TOOLS_ROOT/share/oh-my-zsh
-RUN git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git $TOOLS_ROOT/share/oh-my-zsh \
-  && cp $TOOLS_ROOT/share/oh-my-zsh/templates/zshrc.zsh-template $TOOLS_ROOT/share/oh-my-zsh/.zshrc
+# Install Oh My Zsh to $TOOL_DIR/share/oh-my-zsh
+RUN git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git ${TOOL_DIR}/share/oh-my-zsh \
+  && cp ${TOOL_DIR}/share/oh-my-zsh/templates/zshrc.zsh-template ${TOOL_DIR}/share/oh-my-zsh/.zshrc
 
-# Vendor non-glibc shared libraries into $TOOLS_ROOT/lib
-RUN vendor-dependencies.sh
+# Vendor non-glibc shared libraries into $TOOL_DIR/lib
+RUN vendor-dependencies.sh ${TOOL_DIR}
 
 FROM base
 
-COPY --from=build $TOOLS_ROOT $TOOLS_ROOT
-
-WORKDIR $TOOL_DIR
-CMD ["$TOOLS_ROOT/bin/zsh"]
+COPY --from=build ${TOOLS_ROOT} ${TOOLS_ROOT}

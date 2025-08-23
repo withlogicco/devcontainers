@@ -7,6 +7,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 		 flex bison libreadline-dev zlib1g-dev libssl-dev libicu-dev \
 		 libxml2-dev libxslt1-dev uuid-dev libzstd-dev
 
+ENV TOOL_NAME=postgres
+ENV TOOL_DIR=${TOOLS_ROOT}/${TOOL_NAME}
+RUN mkdir -p ${TOOL_DIR}
+
 ARG PG_MAJOR=17
 ARG PG_VERSION=17.4
 
@@ -23,9 +27,9 @@ WORKDIR /tmp/postgresql-${PG_VERSION}
 # Note: escape $ for Dockerfile so linker sees $ORIGIN.
 ENV LDFLAGS="-Wl,-rpath,'\$$ORIGIN/../lib'"
 
-# Configure to install under $TOOLS_ROOT and enable useful client features
+# Configure to install under $TOOL_DIR and enable useful client features
 RUN ./configure \
-	--prefix=$TOOLS_ROOT \
+	--prefix=${TOOL_DIR} \
 	  --with-openssl \
 	  --with-icu \
 	  --with-libxml \
@@ -36,8 +40,8 @@ RUN ./configure \
 RUN make -C src/interfaces/libpq all && make -C src/interfaces/libpq install
 RUN make -C src/bin all && make -C src/bin install
 
-RUN vendor-dependencies.sh
+RUN vendor-dependencies.sh ${TOOL_DIR}
 
 FROM base
 
-COPY --from=build $TOOLS_ROOT $TOOLS_ROOT
+COPY --from=build ${TOOLS_ROOT} ${TOOLS_ROOT}
