@@ -1,17 +1,51 @@
 #!/bin/sh
 
-set -eux; \
-  mkdir -p $TOOLS_DIR/lib; \
-  bins="$(find $TOOLS_DIR/bin $TOOLS_DIR/libexec -type f -perm -u=x 2>/dev/null)"; \
-  libs="$(find $TOOLS_DIR/lib -type f -name '*.so*' || true)"; \
-  deps="$( (echo "$bins"; echo "$libs") | xargs -r ldd \
-      | awk '/=> \\//{print $3} /^\\/(lib|usr\\/lib)\\//{print $1}' \
-      | sort -u)"; \
-  for so in $deps; do \
-    case "$so" in \
-      $TOOLS_DIR/*) continue ;; \
-      */ld-linux*.so.*|*/libc.so.*|*/libm.so.*|*/libdl.so.*|*/libpthread.so.*|*/librt.so.*) continue ;; \
-    esac; \
-    cp -L "$so" $TOOLS_DIR/lib/; \
-  done; \
-  strip --strip-unneeded $TOOLS_DIR/lib/*.so* || true
+set -eux
+
+# Require a single argument: path to tools root
+if [ "${1:-}" = "" ]; then
+  echo "Usage: $0 <TOOL_DIR>" >&2
+  exit 2
+fi
+
+TOOL_DIR="$1"
+
+# Ensure destination exists
+mkdir -p "$TOOL_DIR/lib"
+
+# Collect candidate binaries and any pre-existing shared libs under tools
+bins="$(find "$TOOL_DIR/bin" "$TOOL_DIR/libexec" -type f -perm -u=x 2>/dev/null || true)"
+libs="$(find "$TOOL_DIR/lib" -type f -name '*.so*' 2>/dev/null || true)"
+
+# Run ldd on each file (if any) and extract dependency paths.
+# Avoid fragile xargs/quoting; use a while loop and a clear awk program.
+deps=$(
+  {
+    # Print one path per line only if variables are non-empty
+    [ -n "$bins" ] && printf '%s\n' $bins || true
+    [ -n "$libs" ] && printf '%s\n' $libs || true
+  } 2>/dev/null \
+  | while IFS= read -r f; do
+      # Skip empty lines defensively
+      [ -n "$f" ] || continue
+      # ldd may fail for non-ELF files; ignore errors
+      ldd "$f" 2>/dev/null || true
+    done \
+  | awk '
+      /=> \/\// { print $3 }
+      /^\/(lib|usr\/lib)\// { print $1 }
+    ' \
+  | sort -u
+)
+
+# Copy non-glibc dependencies into tools/lib
+for so in $deps; do
+  case "$so" in
+    "$TOOL_DIR"/*) continue ;;
+    */ld-linux*.so.*|*/libc.so.*|*/libm.so.*|*/libdl.so.*|*/libpthread.so.*|*/librt.so.*) continue ;;
+  esac
+  cp -L "$so" "$TOOL_DIR/lib/"
+done
+
+# Best-effort strip to reduce size (only when files exist)
+find "$TOOL_DIR/lib" -type f -name '*.so*' -exec strip --strip-unneeded {} + 2>/dev/null || true

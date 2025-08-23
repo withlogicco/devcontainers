@@ -3,37 +3,36 @@
 FROM builder AS build
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-	  --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+	--mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
     apt-get update &&\
     apt-get install -y --no-install-recommends \
     curl xz-utils binutils
 
 ARG NODE_VERSION=22.18.0
 
-# Infer architecture for Node.js binary
-RUN set -eux; \
-  arch="$(uname -m)"; \
-  case "$arch" in \
-    x86_64) node_arch="linux-x64" ;; \
-    aarch64) node_arch="linux-arm64" ;; \
-    armv7l) node_arch="linux-armv7l" ;; \
-    *) echo "Unsupported architecture: $arch"; exit 1 ;; \
-  esac; \
-  echo "NODE_ARCH=$node_arch" > /tmp/node_arch.env
+ENV TOOL_NAME=node
 
-WORKDIR /tmp
+ENV TOOL_DIR=${TOOLS_ROOT}/${TOOL_NAME}
+RUN mkdir -p ${TOOL_DIR}
 
-# Load inferred architecture
-ENV NODE_ARCH=""
-RUN . /tmp/node_arch.env && export NODE_ARCH
+ENV BUILDER_DIR=${TOOLS_ROOT}/builders/${TOOL_NAME}
+RUN mkdir -p ${BUILDER_DIR}
 
-# Download and extract official prebuilt Node.js binary
-COPY --chmod=0755 install-node.sh /usr/local/bin
-RUN install-node.sh
+ENV BUILDER_ENV_FILE=${BUILDER_DIR}/.env
+RUN touch ${BUILDER_ENV_FILE}
+
+COPY --chmod=0755 ./builder/* ${BUILDER_DIR}/
+RUN ls -la ${BUILDER_DIR}
+RUN ${BUILDER_DIR}/0-configure.sh
+RUN ${BUILDER_DIR}/1-install.sh
 
 # Vendor non-glibc shared libraries
-RUN vendor-dependencies.sh
+RUN vendor-dependencies.sh ${TOOL_DIR}
 
 FROM base
 
-COPY --from=build $TOOLS_DIR $TOOLS_DIR
+ENV TOOL_NAME=node
+ENV TOOL_DIR=${TOOLS_ROOT}/node
+
+COPY --from=build ${TOOL_DIR} ${TOOL_DIR}
+COPY --chmod=0755 ./tool/setup.sh ${TOOL_DIR}/setup.sh

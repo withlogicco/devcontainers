@@ -8,6 +8,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     libcurl4-openssl-dev libexpat1-dev libpcre2-dev \
     gettext rsync perl xz-utils
 
+ENV TOOL_NAME=git
+ENV TOOL_DIR=${TOOLS_ROOT}/${TOOL_NAME}
+RUN mkdir -p ${TOOL_DIR}
+
 WORKDIR /tmp
 
 # Fetch and extract Git source
@@ -23,29 +27,27 @@ WORKDIR /tmp/git-${GIT_VERSION}
 # Note: escape $ for Dockerfile so linker sees $ORIGIN.
 ENV LDFLAGS="-Wl,-rpath,'\$$ORIGIN/../lib:\$$ORIGIN/../../lib'"
 
-# Configure and build Git, install into $TOOLS_DIR
+# Configure and build Git, install into $TOOL_DIR
 RUN make configure \
-  && ./configure --prefix=$TOOLS_DIR --with-openssl --with-curl \
+  && ./configure --prefix=$TOOL_DIR --with-openssl --with-curl \
   && make -j"$(nproc)" all \
   && make install
 
-RUN vendor-dependencies.sh
+RUN vendor-dependencies.sh $TOOL_DIR
 
 # Provide PATH fallbacks for remote helpers if exec-path isn't set downstream
 RUN set -eux; \
-  core=$TOOLS_DIR/libexec/git-core; \
+  core=$TOOL_DIR/libexec/git-core; \
   for h in git-remote-https git-remote-http; do \
-    if [ -x "$core/$h" ] && [ ! -e "$TOOLS_DIR/bin/$h" ]; then \
-      ln -s "$core/$h" "$TOOLS_DIR/bin/$h"; \
+    if [ -x "$core/$h" ] && [ ! -e "$TOOL_DIR/bin/$h" ]; then \
+      ln -s "$core/$h" "$TOOL_DIR/bin/$h"; \
     fi; \
   done
-
-# Wrap git to set GIT_EXEC_PATH relative to the binary when not provided
-RUN mv $TOOLS_DIR/bin/git $TOOLS_DIR/bin/git.original
-COPY wrapper/git $TOOLS_DIR/bin/git
-RUN chmod +x $TOOLS_DIR/bin/git
 
 
 FROM base
 
-COPY --from=build $TOOLS_DIR $TOOLS_DIR
+ENV TOOL_NAME=git
+ENV TOOL_DIR=${TOOLS_ROOT}/${TOOL_NAME}
+RUN mkdir -p ${TOOL_DIR}
+COPY --from=build $TOOL_DIR $TOOL_DIR

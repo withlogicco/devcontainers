@@ -23,9 +23,9 @@ WORKDIR /tmp/postgresql-${PG_VERSION}
 # Note: escape $ for Dockerfile so linker sees $ORIGIN.
 ENV LDFLAGS="-Wl,-rpath,'\$$ORIGIN/../lib'"
 
-# Configure to install under $TOOLS_DIR and enable useful client features
+# Configure to install under $TOOLS_ROOT and enable useful client features
 RUN ./configure \
-	--prefix=$TOOLS_DIR \
+	--prefix=$TOOLS_ROOT \
 	  --with-openssl \
 	  --with-icu \
 	  --with-libxml \
@@ -40,4 +40,4 @@ RUN vendor-dependencies.sh
 
 FROM base
 
-COPY --from=build $TOOLS_DIR $TOOLS_DIR
+COPY --from=build $TOOLS_ROOT $TOOLS_ROOT
