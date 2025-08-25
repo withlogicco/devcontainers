@@ -4,7 +4,7 @@ set -eux
 
 export $(cat $BUILDER_ENV_FILE)
 
-cd git-$GIT_VERSION
+cd git-$TOOL_VERSION
 
 make configure
 ./configure --prefix=$TOOL_DIR --with-openssl --with-curl

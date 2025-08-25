@@ -4,7 +4,7 @@ set -eux
 
 export $(cat $BUILDER_ENV_FILE)
 
-cd zsh-$ZSH_VERSION
+cd zsh-$TOOL_VERSION
 
 # Install zsh
 ./Util/preconfig

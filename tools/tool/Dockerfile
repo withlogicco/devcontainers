@@ -2,10 +2,11 @@ FROM builder AS build
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 	--mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
-    --mount=type=bind,source=Aptfile,target=Aptfile \
+    --mount=type=bind,source=builder/Aptfile,target=Aptfile \
     apt.sh
 
-ENV TOOL_NAME=node
+ARG TOOL_NAME
+ENV TOOL_NAME=${TOOL_NAME}
 
 ENV TOOL_DIR=${TOOLS_ROOT}/${TOOL_NAME}
 RUN mkdir -p ${TOOL_DIR}
@@ -24,8 +25,11 @@ ENV BUILDER_BIN_DIR=${BUILDER_DIR}/bin
 RUN mkdir -p ${BUILDER_BIN_DIR}
 COPY --chmod=0755 ./builder/bin/* ${BUILDER_BIN_DIR}/
 
-ARG NODE_VERSION=22.18.0
-ENV NODE_VERSION=${NODE_VERSION}
+ARG TOOL_VERSION
+
+RUN echo "TOOL_VERSION=${TOOL_VERSION}" >> ${BUILDER_ENV_FILE}
+
+RUN cat ${BUILDER_ENV_FILE}
 
 RUN ${BUILDER_BIN_DIR}/0-configure.sh
 RUN ${BUILDER_BIN_DIR}/1-download.sh
@@ -36,7 +40,8 @@ RUN vendor-dependencies.sh ${TOOL_DIR}
 
 FROM base
 
-ENV TOOL_NAME=node
+ARG TOOL_NAME
+ENV TOOL_NAME=${TOOL_NAME}
 ENV TOOL_DIR=${TOOLS_ROOT}/${TOOL_NAME}
 
 COPY --from=build ${TOOL_DIR} ${TOOL_DIR}

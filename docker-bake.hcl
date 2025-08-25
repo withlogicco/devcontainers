@@ -4,8 +4,12 @@ group "default" {
 
 target "postgres" {
   context = "./tools/postgres"
-  dockerfile = "Dockerfile"
+  dockerfile = "../tool/Dockerfile"
   tags = ["ghcr.io/withlogicco/devcontainers/tools/postgres:latest"]
+  args = {
+    TOOL_NAME = "postgres"
+    TOOL_VERSION = "17.4"
+  }
   contexts = {
     base = "target:base"
     builder = "target:builder"
@@ -14,8 +18,12 @@ target "postgres" {
 
 target "git" {
   context = "./tools/git"
-  dockerfile = "Dockerfile"
+  dockerfile = "../tool/Dockerfile"
   tags = ["ghcr.io/withlogicco/devcontainers/tools/git:latest"]
+  args = {
+    TOOL_NAME = "git"
+    TOOL_VERSION = "2.51.0"
+  }
   contexts = {
     base = "target:base"
     builder = "target:builder"
@@ -24,8 +32,12 @@ target "git" {
 
 target "node" {
   context = "./tools/node"
-  dockerfile = "Dockerfile"
+  dockerfile = "../tool/Dockerfile"
   tags = ["ghcr.io/withlogicco/devcontainers/tools/node:latest"]
+  args = {
+    TOOL_NAME = "node"
+    TOOL_VERSION = "22.18.0"
+  }
   contexts = {
     base = "target:base"
     builder = "target:builder"
@@ -34,8 +46,12 @@ target "node" {
 
 target "zsh" {
   context = "./tools/zsh"
-  dockerfile = "Dockerfile"
+  dockerfile = "../tool/Dockerfile"
   tags = ["ghcr.io/withlogicco/devcontainers/tools/zsh:latest"]
+  args = {
+    TOOL_NAME = "zsh"
+    TOOL_VERSION = "5.9"
+  }
   contexts = {
     base = "target:base"
     builder = "target:builder"

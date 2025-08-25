@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.17.0
-
 FROM base
 
 ENV DEBIAN_FRONTEND=noninteractive

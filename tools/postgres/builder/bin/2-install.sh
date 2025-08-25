@@ -4,7 +4,7 @@ set -eux
 
 export $(cat $BUILDER_ENV_FILE)
 
-cd postgresql-$PG_VERSION
+cd postgresql-$TOOL_VERSION
 
 # Configure to install under $TOOL_DIR and enable useful client features
 ./configure --prefix=$TOOL_DIR --with-openssl --with-icu --with-libxml --with-libxslt --without-ldap
