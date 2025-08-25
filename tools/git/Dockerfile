@@ -2,11 +2,8 @@ FROM builder AS build
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 	  --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
-    apt-get update &&\
-    apt-get install -y --no-install-recommends \
-    libz-dev zlib1g-dev libssl-dev \
-    libcurl4-openssl-dev libexpat1-dev libpcre2-dev \
-    gettext rsync perl xz-utils
+    --mount=type=bind,source=Aptfile,target=Aptfile \
+    apt.sh
 
 ENV TOOL_NAME=git
 ENV TOOL_DIR=${TOOLS_ROOT}/${TOOL_NAME}

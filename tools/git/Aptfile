@@ -1,0 +1,10 @@
+gettext
+libssl-dev
+libcurl4-openssl-dev
+libexpat1-dev
+libpcre2-dev
+libz-dev
+perl
+rsync
+xz-utils
+zlib1g-dev
