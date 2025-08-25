@@ -6,45 +6,37 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt.sh
 
 ENV TOOL_NAME=git
+
 ENV TOOL_DIR=${TOOLS_ROOT}/${TOOL_NAME}
 RUN mkdir -p ${TOOL_DIR}
 
-WORKDIR /tmp
+ENV BUILDER_DIR=${TOOLS_ROOT}/builders/${TOOL_NAME}
+RUN mkdir -p ${BUILDER_DIR}
 
-# Fetch and extract Git source
+ENV BUILDER_WORK_DIR=${BUILDER_DIR}/work
+RUN mkdir -p ${BUILDER_WORK_DIR}
+WORKDIR ${BUILDER_WORK_DIR}
+
+ENV BUILDER_ENV_FILE=${BUILDER_WORK_DIR}/.env
+RUN touch ${BUILDER_ENV_FILE}
+
+ENV BUILDER_BIN_DIR=${BUILDER_DIR}/bin
+RUN mkdir -p ${BUILDER_BIN_DIR}
+COPY --chmod=0755 ./builder/bin/* ${BUILDER_BIN_DIR}/
+
 ARG GIT_VERSION=2.51.0
-RUN curl -fsSL -o git.tar.xz https://www.kernel.org/pub/software/scm/git/git-${GIT_VERSION}.tar.xz \
-  && tar -xJf git.tar.xz \
-  && rm git.tar.xz
+RUN echo "GIT_VERSION=${GIT_VERSION} >> ${BUILDER_ENV_FILE}"
 
-WORKDIR /tmp/git-${GIT_VERSION}
+RUN ${BUILDER_BIN_DIR}/0-configure.sh
+RUN ${BUILDER_BIN_DIR}/1-download.sh
+RUN ${BUILDER_BIN_DIR}/2-install.sh
 
-# Ensure installed binaries prefer ../lib at runtime (self-contained without env vars)
-# Include both one- and two-level ups to cover bin and libexec/git-core
-# Note: escape $ for Dockerfile so linker sees $ORIGIN.
-ENV LDFLAGS="-Wl,-rpath,'\$$ORIGIN/../lib:\$$ORIGIN/../../lib'"
-
-# Configure and build Git, install into $TOOL_DIR
-RUN make configure \
-  && ./configure --prefix=$TOOL_DIR --with-openssl --with-curl \
-  && make -j"$(nproc)" all \
-  && make install
-
-RUN vendor-dependencies.sh $TOOL_DIR
-
-# Provide PATH fallbacks for remote helpers if exec-path isn't set downstream
-RUN set -eux; \
-  core=$TOOL_DIR/libexec/git-core; \
-  for h in git-remote-https git-remote-http; do \
-    if [ -x "$core/$h" ] && [ ! -e "$TOOL_DIR/bin/$h" ]; then \
-      ln -s "$core/$h" "$TOOL_DIR/bin/$h"; \
-    fi; \
-  done
-
+RUN vendor-dependencies.sh ${TOOL_DIR}
 
 FROM base
 
 ENV TOOL_NAME=git
 ENV TOOL_DIR=${TOOLS_ROOT}/${TOOL_NAME}
-RUN mkdir -p ${TOOL_DIR}
+
 COPY --from=build $TOOL_DIR $TOOL_DIR
+COPY --chmod=0755 ./tool/setup.sh ${TOOL_DIR}/setup.sh

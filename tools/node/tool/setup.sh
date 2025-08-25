@@ -1,6 +1,6 @@
 #! /bin/sh
 
-set -ex
+set -eux
 
 DEFAULT_TOOL_DIR=${1:-${TOOLS_ROOT}/node}
 
