@@ -2,9 +2,7 @@
 
 set -eux
 
-DEFAULT_TOOL_DIR=${1:-${TOOLS_ROOT}/node}
-
-export TOOL_DIR=${TOOL_DIR:-$DEFAULT_TOOL_DIR}
+export TOOL_DIR=${TOOL_DIR:-/opt/tools/node}
 
 mkdir -p ${TOOL_DIR}
 cp -r ./bin ${TOOL_DIR}/bin
