@@ -1,0 +1,8 @@
+autoconf
+binutils
+build-essential
+ca-certificates
+curl
+gcc
+make
+pkg-config
