@@ -4,9 +4,8 @@ FROM builder AS build
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 	--mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
-    apt-get update &&\
-    apt-get install -y --no-install-recommends \
-    curl xz-utils binutils
+    --mount=type=bind,source=Aptfile,target=Aptfile \
+    apt.sh
 
 ARG NODE_VERSION=22.18.0
 
