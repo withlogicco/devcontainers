@@ -1,0 +1,4 @@
+git
+libncurses-dev
+libpcre2-dev
+libssl-dev

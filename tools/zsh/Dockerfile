@@ -1,39 +1,43 @@
 FROM builder AS build
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-	  --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
-    apt-get update &&\
-    apt-get install -y --no-install-recommends \
-    git libncurses-dev libpcre2-dev libssl-dev
+  	--mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    --mount=type=bind,source=Aptfile,target=Aptfile \
+    apt.sh
 
 ENV TOOL_NAME=zsh
+
 ENV TOOL_DIR=${TOOLS_ROOT}/${TOOL_NAME}
 RUN mkdir -p ${TOOL_DIR}
 
+ENV BUILDER_DIR=${TOOLS_ROOT}/builders/${TOOL_NAME}
+RUN mkdir -p ${BUILDER_DIR}
+
+ENV BUILDER_WORK_DIR=${BUILDER_DIR}/work
+RUN mkdir -p ${BUILDER_WORK_DIR}
+WORKDIR ${BUILDER_WORK_DIR}
+
+ENV BUILDER_ENV_FILE=${BUILDER_WORK_DIR}/.env
+RUN touch ${BUILDER_ENV_FILE}
+
+ENV BUILDER_BIN_DIR=${BUILDER_DIR}/bin
+RUN mkdir -p ${BUILDER_BIN_DIR}
+COPY --chmod=0755 ./builder/bin/* ${BUILDER_BIN_DIR}/
+
 ARG ZSH_VERSION=5.9
+RUN echo "ZSH_VERSION=${ZSH_VERSION} >> ${BUILDER_ENV_FILE}"
 
-WORKDIR /tmp
-
-# Fetch and build zsh from source
-RUN curl -fsSL -o zsh.tar.xz https://sourceforge.net/projects/zsh/files/zsh/${ZSH_VERSION}/zsh-${ZSH_VERSION}.tar.xz/download \
-  && tar -xJf zsh.tar.xz \
-  && rm zsh.tar.xz
-
-WORKDIR /tmp/zsh-${ZSH_VERSION}
-
-# Configure to install into $TOOL_DIR
-RUN ./Util/preconfig \
-  && ./configure --prefix=${TOOL_DIR} --enable-multibyte --with-tcsetpgrp \
-  && make -j"$(nproc)" \
-  && make install
-
-# Install Oh My Zsh to $TOOL_DIR/share/oh-my-zsh
-RUN git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git ${TOOL_DIR}/share/oh-my-zsh \
-  && cp ${TOOL_DIR}/share/oh-my-zsh/templates/zshrc.zsh-template ${TOOL_DIR}/share/oh-my-zsh/.zshrc
+RUN ${BUILDER_BIN_DIR}/0-configure.sh
+RUN ${BUILDER_BIN_DIR}/1-download.sh
+RUN ${BUILDER_BIN_DIR}/2-install.sh
 
 # Vendor non-glibc shared libraries into $TOOL_DIR/lib
 RUN vendor-dependencies.sh ${TOOL_DIR}
 
 FROM base
 
-COPY --from=build ${TOOLS_ROOT} ${TOOLS_ROOT}
+ENV TOOL_NAME=zsh
+ENV TOOL_DIR=${TOOLS_ROOT}/${TOOL_NAME}
+
+COPY --from=build ${TOOL_DIR} ${TOOL_DIR}
+COPY --chmod=0755 ./tool/setup.sh ${TOOL_DIR}/setup.sh

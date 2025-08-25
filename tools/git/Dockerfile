@@ -38,5 +38,5 @@ FROM base
 ENV TOOL_NAME=git
 ENV TOOL_DIR=${TOOLS_ROOT}/${TOOL_NAME}
 
-COPY --from=build $TOOL_DIR $TOOL_DIR
+COPY --from=build ${TOOL_DIR} ${TOOL_DIR}
 COPY --chmod=0755 ./tool/setup.sh ${TOOL_DIR}/setup.sh

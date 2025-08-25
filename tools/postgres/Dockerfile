@@ -25,7 +25,7 @@ RUN mkdir -p ${BUILDER_BIN_DIR}
 COPY --chmod=0755 ./builder/bin/* ${BUILDER_BIN_DIR}/
 
 ARG PG_VERSION=17.4
-RUN echo "PG_VERSION=${PG_VERSION} >> ${PG_VERSION}"
+RUN echo "PG_VERSION=${PG_VERSION} >> ${BUILDER_ENV_FILE}"
 
 RUN ${BUILDER_BIN_DIR}/0-configure.sh
 RUN ${BUILDER_BIN_DIR}/1-download.sh
@@ -38,5 +38,5 @@ FROM base
 ENV TOOL_NAME=postgres
 ENV TOOL_DIR=${TOOLS_ROOT}/${TOOL_NAME}
 
-COPY --from=build $TOOL_DIR $TOOL_DIR
+COPY --from=build ${TOOL_DIR} ${TOOL_DIR}
 COPY --chmod=0755 ./tool/setup.sh ${TOOL_DIR}/setup.sh
