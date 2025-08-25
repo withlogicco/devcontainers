@@ -2,46 +2,41 @@ FROM builder AS build
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 	--mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
-    apt-get update &&\
-	apt-get install -y --no-install-recommends \
-		 flex bison libreadline-dev zlib1g-dev libssl-dev libicu-dev \
-		 libxml2-dev libxslt1-dev uuid-dev libzstd-dev
+    --mount=type=bind,source=Aptfile,target=Aptfile \
+    apt.sh
 
 ENV TOOL_NAME=postgres
+
 ENV TOOL_DIR=${TOOLS_ROOT}/${TOOL_NAME}
 RUN mkdir -p ${TOOL_DIR}
 
-ARG PG_MAJOR=17
+ENV BUILDER_DIR=${TOOLS_ROOT}/builders/${TOOL_NAME}
+RUN mkdir -p ${BUILDER_DIR}
+
+ENV BUILDER_WORK_DIR=${BUILDER_DIR}/work
+RUN mkdir -p ${BUILDER_WORK_DIR}
+WORKDIR ${BUILDER_WORK_DIR}
+
+ENV BUILDER_ENV_FILE=${BUILDER_WORK_DIR}/.env
+RUN touch ${BUILDER_ENV_FILE}
+
+ENV BUILDER_BIN_DIR=${BUILDER_DIR}/bin
+RUN mkdir -p ${BUILDER_BIN_DIR}
+COPY --chmod=0755 ./builder/bin/* ${BUILDER_BIN_DIR}/
+
 ARG PG_VERSION=17.4
+RUN echo "PG_VERSION=${PG_VERSION} >> ${PG_VERSION}"
 
-WORKDIR /tmp
-
-# Fetch and extract PostgreSQL source
-RUN curl -fsSL -o postgresql.tar.gz https://ftp.postgresql.org/pub/source/v${PG_VERSION}/postgresql-${PG_VERSION}.tar.gz \
-	&& tar -xzf postgresql.tar.gz \
-	&& rm postgresql.tar.gz
-
-WORKDIR /tmp/postgresql-${PG_VERSION}
-
-# Ensure installed binaries prefer ../lib at runtime (self-contained without env vars)
-# Note: escape $ for Dockerfile so linker sees $ORIGIN.
-ENV LDFLAGS="-Wl,-rpath,'\$$ORIGIN/../lib'"
-
-# Configure to install under $TOOL_DIR and enable useful client features
-RUN ./configure \
-	--prefix=${TOOL_DIR} \
-	  --with-openssl \
-	  --with-icu \
-	  --with-libxml \
-	  --with-libxslt \
-	  --without-ldap
-
-# Build and install only libpq and client binaries (psql, pg_dump, etc.)
-RUN make -C src/interfaces/libpq all && make -C src/interfaces/libpq install
-RUN make -C src/bin all && make -C src/bin install
+RUN ${BUILDER_BIN_DIR}/0-configure.sh
+RUN ${BUILDER_BIN_DIR}/1-download.sh
+RUN ${BUILDER_BIN_DIR}/2-install.sh
 
 RUN vendor-dependencies.sh ${TOOL_DIR}
 
 FROM base
 
-COPY --from=build ${TOOLS_ROOT} ${TOOLS_ROOT}
+ENV TOOL_NAME=postgres
+ENV TOOL_DIR=${TOOLS_ROOT}/${TOOL_NAME}
+
+COPY --from=build $TOOL_DIR $TOOL_DIR
+COPY --chmod=0755 ./tool/setup.sh ${TOOL_DIR}/setup.sh

@@ -1,4 +1,5 @@
 #! /bin/sh
+
 set -eux
 
 export $(cat $BUILDER_ENV_FILE)

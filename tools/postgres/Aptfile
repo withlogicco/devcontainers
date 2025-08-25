@@ -1,0 +1,10 @@
+bison
+flex
+libicu-dev
+libreadline-dev
+libssl-dev
+libxml2-dev
+libxslt1-dev
+libzstd-dev
+uuid-dev
+zlib1g-dev

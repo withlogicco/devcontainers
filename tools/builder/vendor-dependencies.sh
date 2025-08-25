@@ -18,7 +18,6 @@ bins="$(find "$TOOL_DIR/bin" "$TOOL_DIR/libexec" -type f -perm -u=x 2>/dev/null 
 libs="$(find "$TOOL_DIR/lib" -type f -name '*.so*' 2>/dev/null || true)"
 
 # Run ldd on each file (if any) and extract dependency paths.
-# Avoid fragile xargs/quoting; use a while loop and a clear awk program.
 deps=$(
   {
     # Print one path per line only if variables are non-empty
@@ -31,10 +30,16 @@ deps=$(
       # ldd may fail for non-ELF files; ignore errors
       ldd "$f" 2>/dev/null || true
     done \
-  | awk '
-      /=> \/\// { print $3 }
-      /^\/(lib|usr\/lib)\// { print $1 }
-    ' \
+  | while IFS= read -r line; do
+      # If the line contains '=>', the resolved path is typically the third word
+      case "$line" in
+        *' => '*) set -- $line; p="$3" ;; 
+        /lib/*|/usr/lib/*) set -- $line; p="$1" ;;
+        *) p="" ;;
+      esac
+      # print only absolute paths
+      [ -n "$p" ] && case "$p" in /*) printf '%s\n' "$p" ;; esac
+    done \
   | sort -u
 )
 
