@@ -1,5 +1,3 @@
-# syntax=docker.io/docker/dockerfile-upstream:1.14.0-labs
-
 FROM builder AS build
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -15,15 +13,23 @@ RUN mkdir -p ${TOOL_DIR}
 ENV BUILDER_DIR=${TOOLS_ROOT}/builders/${TOOL_NAME}
 RUN mkdir -p ${BUILDER_DIR}
 
+ENV BUILDER_WORK_DIR=${BUILDER_DIR}/work
+RUN mkdir -p ${BUILDER_WORK_DIR}
+WORKDIR ${BUILDER_WORK_DIR}
+
 ENV BUILDER_ENV_FILE=${BUILDER_DIR}/.env
 RUN touch ${BUILDER_ENV_FILE}
+
+ENV BUILDER_BIN_DIR=${BUILDER_DIR}/bin
+RUN mkdir -p ${BUILDER_BIN_DIR}
+COPY --chmod=0755 ./builder/bin/* ${BUILDER_BIN_DIR}/
 
 ARG NODE_VERSION=22.18.0
 ENV NODE_VERSION=${NODE_VERSION}
 
-COPY --chmod=0755 ./builder/* ${BUILDER_DIR}/
-RUN ${BUILDER_DIR}/0-configure.sh
-RUN ${BUILDER_DIR}/1-install.sh
+RUN ${BUILDER_BIN_DIR}/0-configure.sh
+RUN ${BUILDER_BIN_DIR}/1-download.sh
+RUN ${BUILDER_BIN_DIR}/2-install.sh
 
 # Vendor non-glibc shared libraries
 RUN vendor-dependencies.sh ${TOOL_DIR}
