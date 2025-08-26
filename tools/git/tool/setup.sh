@@ -4,9 +4,11 @@ set -eux
 
 export TOOL_DIR=${TOOL_DIR:-/opt/tools/git}
 
-mkdir -p $TOOL_DIR
+mkdir -p $TOOL_DIR $TOOL_DIR/bin $TOOL_DIR/lib $TOOL_DIR/libexec $TOOL_DIR/share
+
 cp -r ./bin $TOOL_DIR/bin
 cp -r ./lib $TOOL_DIR/lib
+cp -r ./libexec $TOOL_DIR/libexec
 cp -r ./share $TOOL_DIR/share
 
 ln -s $TOOL_DIR/bin/git /usr/local/bin/git
