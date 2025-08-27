@@ -4,10 +4,15 @@ set -eux
 
 export TOOL_DIR=${TOOL_DIR:-/opt/tools/zsh}
 
-mkdir -p $TOOL_DIR
-cp -r ./bin $TOOL_DIR/bin
-cp -r ./lib $TOOL_DIR/lib
-cp -r ./share $TOOL_DIR/share
+if [ "$(pwd -P)" != "$TOOL_DIR" ]; then
+    mkdir -p ${TOOL_DIR}
+    cp -r ./bin ${TOOL_DIR}/bin
+    cp -r ./include ${TOOL_DIR}/include
+    cp -r ./lib ${TOOL_DIR}/lib
+    cp -r ./share ${TOOL_DIR}/share
+else
+    printf 'Skipping copy: current directory is %s\n' "$TOOL_DIR" >&2
+fi
 
 for f in "$TOOL_DIR/bin"/*; do
     [ -e "$f" ] || continue   # skip if glob didn't match

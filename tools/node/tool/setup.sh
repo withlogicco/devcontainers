@@ -4,13 +4,19 @@ set -eux
 
 export TOOL_DIR=${TOOL_DIR:-/opt/tools/node}
 
-mkdir -p ${TOOL_DIR}
-cp -r ./bin ${TOOL_DIR}/bin
-cp -r ./include ${TOOL_DIR}/include
-cp -r ./lib ${TOOL_DIR}/lib
-cp -r ./share ${TOOL_DIR}/share
+if [ "$(pwd -P)" != "$TOOL_DIR" ]; then
+    mkdir -p ${TOOL_DIR}
+    cp -r ./bin ${TOOL_DIR}/bin
+    cp -r ./include ${TOOL_DIR}/include
+    cp -r ./lib ${TOOL_DIR}/lib
+    cp -r ./share ${TOOL_DIR}/share
+else
+    printf 'Skipping copy: current directory is %s\n' "$TOOL_DIR" >&2
+fi
 
-ln -s ${TOOL_DIR}/bin/corepack /usr/local/bin/corepack
-ln -s ${TOOL_DIR}/bin/node /usr/local/bin/node
-ln -s ${TOOL_DIR}/bin/npm /usr/local/bin/npm
-ln -s ${TOOL_DIR}/bin/npx /usr/local/bin/npx
+for f in "$TOOL_DIR/bin"/*; do
+    [ -e "$f" ] || continue   # skip if glob didn't match
+    [ -d "$f" ] && continue   # skip directories
+    name="${f##*/}"
+    ln -sf "$f" "/usr/local/bin/$name"
+done
